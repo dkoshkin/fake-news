@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -79,6 +80,7 @@ type Attachment struct {
 }
 
 func (n news) getNews(c *gin.Context) {
+	rand.Seed(time.Now().Unix())
 	source := sources[rand.Intn(len(sources))]
 	apiKey := os.Getenv("NEWS_API_KEY")
 	url := fmt.Sprintf("https://newsapi.org/v1/articles?source=%s&sortBy=top&apiKey=%s", source, apiKey)
@@ -101,6 +103,7 @@ func (n news) getNews(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 	}
 
+	rand.Seed(time.Now().Unix())
 	article := jsonResp.Articles[rand.Intn(5)]
 	slackResp := SlackResponse{ResponseType: "in_channel", Text: article.Title, Attachments: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.URL, Text: article.Description, ImageURL: article.URLToImage}}}
 	//slackResp := SlackResponse{Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
