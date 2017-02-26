@@ -23,7 +23,7 @@ func setupMainEngine() *gin.Engine {
 	healthz := &healthz{}
 	r.GET("/healthz", healthz.getHealthz)
 	news := &news{}
-	r.GET("/", news.getNews)
+	r.GET("/", news.getArticleUrl)
 	r.POST("/", news.getNews)
 
 	return r
@@ -53,10 +53,10 @@ var sources = []string{
 type NewsResponse struct {
 	Status   string
 	Source   string
-	Articles []Articles
+	Articles []Article
 }
 
-type Articles struct {
+type Article struct {
 	Author      string
 	Title       string
 	Description string
@@ -80,6 +80,26 @@ type Attachment struct {
 }
 
 func (n news) getNews(c *gin.Context) {
+	article, err := fetchArticle()
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+	}
+
+	slackResp := SlackResponse{ResponseType: "in_channel", Text: article.Title, Attachments: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.URL, Text: article.Description, ImageURL: article.URLToImage}}}
+	//slackResp := SlackResponse{Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
+	c.JSON(http.StatusOK, slackResp)
+}
+
+func (n news) getArticleUrl(c *gin.Context) {
+	article, err := fetchArticle()
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+	}
+
+	c.Redirect(http.StatusFound, article.URL)
+}
+
+func fetchArticle() (*Article, error) {
 	rand.Seed(time.Now().Unix())
 	source := sources[rand.Intn(len(sources))]
 	apiKey := os.Getenv("NEWS_API_KEY")
@@ -88,24 +108,28 @@ func (n news) getNews(c *gin.Context) {
 
 	resp, err := http.Get(url)
 	if err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	// Fill the record with the data from the JSON
-	var jsonResp NewsResponse
+	var newsResp NewsResponse
 	// Use json.Decode for reading streams of JSON data
-	if err := json.NewDecoder(resp.Body).Decode(&jsonResp); err != nil {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	if err := json.NewDecoder(resp.Body).Decode(&newsResp); err != nil {
+		return nil, err
 	}
 
-	if jsonResp.Status == "error" || len(jsonResp.Articles) < 5 {
-		c.AbortWithError(http.StatusInternalServerError, err)
+	if newsResp.Status == "error" {
+		return nil, fmt.Errorf("Error response from news API")
+	}
+
+	numberOfArticles := 5
+	if len(newsResp.Articles) < 5 {
+		numberOfArticles = len(newsResp.Articles)
 	}
 
 	rand.Seed(time.Now().Unix())
-	article := jsonResp.Articles[rand.Intn(5)]
-	slackResp := SlackResponse{ResponseType: "in_channel", Text: article.Title, Attachments: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.URL, Text: article.Description, ImageURL: article.URLToImage}}}
-	//slackResp := SlackResponse{Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
-	c.JSON(http.StatusOK, slackResp)
+	article := newsResp.Articles[rand.Intn(numberOfArticles)]
+
+	return &article, nil
 }
