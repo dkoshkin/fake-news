@@ -1,0 +1,4 @@
+package: github.com/dkoshkin/fake-news
+import:
+- package: github.com/gin-gonic/gin
+  version: ^1.1.4
