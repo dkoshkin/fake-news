@@ -42,7 +42,7 @@ type news struct {
 
 var sources = []string{
 	//"google-news",
-	"the-wall-street-journal",
+	//"the-wall-street-journal",
 	"the-washington-post",
 	"the-new-york-times",
 	"cnn",
