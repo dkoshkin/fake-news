@@ -59,21 +59,23 @@ type Articles struct {
 	Author      string
 	Title       string
 	Description string
-	Url         string
+	URL         string `json:"url"`
+	URLToImage  string `json:"urlToImage"`
 	PublishedAt string
 }
 
 type SlackResponse struct {
-	ResponseType string `json:"response_type"`
-	Text         string
-	Attachements []Attachment
+	ResponseType string       `json:"response_type"`
+	Text         string       `json:"text"`
+	Attachments  []Attachment `json:"attachments"`
 }
 
 type Attachment struct {
 	AuthorName string `json:"author_name"`
-	Title      string
+	Title      string `json:"title"`
 	TitleLink  string `json:"title_link"`
-	Text       string
+	Text       string `json:"text"`
+	ImageURL   string `json:"image_url"`
 }
 
 func (n news) getNews(c *gin.Context) {
@@ -100,7 +102,7 @@ func (n news) getNews(c *gin.Context) {
 	}
 
 	article := jsonResp.Articles[rand.Intn(5)]
-	//slackResp := SlackResponse{ResponseType: "in_channel", Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
-	slackResp := SlackResponse{Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
+	slackResp := SlackResponse{ResponseType: "in_channel", Text: article.Title, Attachments: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.URL, Text: article.Description, ImageURL: article.URLToImage}}}
+	//slackResp := SlackResponse{Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
 	c.JSON(http.StatusOK, slackResp)
 }
