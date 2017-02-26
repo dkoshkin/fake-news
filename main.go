@@ -100,6 +100,7 @@ func (n news) getNews(c *gin.Context) {
 	}
 
 	article := jsonResp.Articles[rand.Intn(5)]
-	slackResp := SlackResponse{ResponseType: "in_channel", Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
+	//slackResp := SlackResponse{ResponseType: "in_channel", Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
+	slackResp := SlackResponse{Text: article.Title, Attachements: []Attachment{Attachment{AuthorName: article.Author, Title: article.Title, TitleLink: article.Url, Text: article.Description}}}
 	c.JSON(http.StatusOK, slackResp)
 }
